@@ -1,0 +1,46 @@
+{
+  "name": "Open in Chrome Browser",
+  "description": "Open current page, link, or all tabs in the Chrome browser.",
+  "version": "0.3.0",
+  "manifest_version": 3,
+  "permissions": [
+    "storage",
+    "tabs",
+    "contextMenus",
+    "nativeMessaging"
+  ],
+  "optional_permissions": [
+    "downloads"
+  ],
+  "icons": {
+    "16": "data/icons/16.png",
+    "32": "data/icons/32.png",
+    "48": "data/icons/48.png",
+    "64": "data/icons/64.png",
+    "128": "data/icons/128.png",
+    "256": "data/icons/256.png",
+    "512": "data/icons/512.png"
+  },
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "storage": {
+    "managed_schema": "schema.json"
+  },
+  "homepage_url": "https://add0n.com/open-in.html?from=chrome",
+  "action": {},
+  "content_scripts": [{
+    "js": ["data/inject.js"],
+    "matches": ["<all_urls>"],
+    "run_at": "document_start",
+    "all_frames": true,
+    "match_about_blank": true
+  }],
+  "options_ui": {
+    "page": "data/options/index.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "_execute_action": {}
+  }
+}

@@ -1,46 +1,79 @@
 {
-  "name": "Open in Chrome Browser",
+  "name": "Open in Chrome™ Browser",
   "description": "Open current page, link, or all tabs in the Chrome browser.",
-  "version": "0.3.1",
+  "version": "0.3.6",
   "manifest_version": 3,
   "permissions": [
     "storage",
     "tabs",
     "contextMenus",
-    "nativeMessaging"
+    "nativeMessaging",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
   ],
   "optional_permissions": [
     "downloads"
   ],
   "icons": {
-    "16": "data/icons/16.png",
-    "32": "data/icons/32.png",
-    "48": "data/icons/48.png",
-    "64": "data/icons/64.png",
-    "128": "data/icons/128.png",
-    "256": "data/icons/256.png",
-    "512": "data/icons/512.png"
+    "16": "/data/icons/16.png",
+    "32": "/data/icons/32.png",
+    "48": "/data/icons/48.png",
+    "64": "/data/icons/64.png",
+    "128": "/data/icons/128.png",
+    "256": "/data/icons/256.png",
+    "512": "/data/icons/512.png"
   },
   "background": {
-    "service_worker": "worker.js"
+    "service_worker": "worker.js",
+    "scripts": [
+      "termlib_parser.js",
+      "builder.js",
+      "config.js",
+      "context.js",
+      "redirect/convert.js",
+      "redirect/core.js",
+      "worker.js"
+    ]
   },
   "storage": {
     "managed_schema": "schema.json"
   },
-  "homepage_url": "https://add0n.com/open-in.html?from=chrome",
+  "homepage_url": "https://webextension.org/listing/open-in.html?from=chrome",
   "action": {},
   "content_scripts": [{
-    "js": ["data/inject.js"],
+    "js": ["/data/inject.js"],
     "matches": ["<all_urls>"],
     "run_at": "document_start",
     "all_frames": true,
-    "match_about_blank": true
+    "match_about_blank": true,
+    "world": "ISOLATED"
+  }, {
+    "js": ["/data/page.js"],
+    "matches": ["<all_urls>"],
+    "run_at": "document_start",
+    "all_frames": true,
+    "match_about_blank": true,
+    "world": "MAIN"
   }],
   "options_ui": {
-    "page": "data/options/index.html",
+    "page": "/data/options/index.html",
     "open_in_tab": true
   },
   "commands": {
     "_execute_action": {}
+  },
+  "web_accessible_resources": [{
+    "resources": [
+      "/data/redirect/index.html"
+    ],
+    "matches": ["*://*/*"]
+  }],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{086f665e-6a55-4107-9147-f9a14e72b137}",
+      "strict_min_version": "128.0"
+    }
   }
 }

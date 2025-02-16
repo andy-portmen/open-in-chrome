@@ -1,7 +1,12 @@
 /* global app */
 
 {
-  const callback = () => {
+  const once = () => {
+    if (once.true) {
+      return;
+    }
+    once.true = true;
+
     chrome.contextMenus.create({
       id: 'open-current',
       title: 'Open Link in Chrome',
@@ -18,13 +23,23 @@
       title: 'Open all Tabs in Chrome (Current window)',
       contexts: ['action']
     }, () => chrome.runtime.lastError);
+    if (/Firefox/.test(navigator.userAgent)) {
+      chrome.contextMenus.create({
+        id: 'open-options',
+        title: 'Options',
+        contexts: ['action']
+      }, () => chrome.runtime.lastError);
+    }
   };
-  chrome.runtime.onInstalled.addListener(callback);
-  chrome.runtime.onStartup.addListener(callback);
+  chrome.runtime.onInstalled.addListener(once);
+  chrome.runtime.onStartup.addListener(once);
 }
 
 chrome.contextMenus.onClicked.addListener(info => {
-  if (info.menuItemId === 'open-current') {
+  if (info.menuItemId === 'open-options') {
+    chrome.runtime.openOptionsPage();
+  }
+  else if (info.menuItemId === 'open-current') {
     open([info.linkUrl || info.pageUrl], []);
   }
   else if (info.menuItemId === 'open-all' || info.menuItemId === 'open-call') {

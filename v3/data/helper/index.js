@@ -4,6 +4,8 @@ const args = new URLSearchParams(location.search);
 const id = args.get('id') || 'com.add0n.node';
 
 document.title = 'One Extra Step :: ' + chrome.runtime.getManifest().name;
+document.getElementById('guid').textContent = chrome.runtime.id;
+
 
 let os = 'windows';
 if (navigator.userAgent.indexOf('Mac') !== -1) {
@@ -15,7 +17,9 @@ else if (navigator.userAgent.indexOf('Linux') !== -1) {
 document.body.dataset.os = (os === 'mac' || os === 'linux') ? 'linux' : 'windows';
 
 if (['Lin', 'Win', 'Mac'].indexOf(navigator.platform.substr(0, 3)) === -1) {
-  window.alert('Sorry! The "native client" only supports the following operating systems at the moment:\n\nWindows, Mac, and Linux');
+  window.alert(`Sorry! The "native client" only supports the following operating systems at the moment:
+
+Windows, Mac, and Linux`);
 }
 
 const notify = (() => {

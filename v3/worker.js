@@ -1,10 +1,14 @@
-/* globals importScripts, app */
+/* global app, builder */
 
-importScripts('./config.js');
-importScripts('./context.js');
+if (typeof importScripts !== 'undefined') {
+  self.importScripts('builder.js');
+  self.importScripts('config.js');
+  self.importScripts('context.js');
+  self.importScripts('redirect/convert.js', 'redirect/core.js');
+}
 
 const ct = () => chrome.tabs.query({
-  currentWindow: true,
+  lastFocusedWindow: true,
   active: true
 });
 
@@ -22,16 +26,25 @@ const notify = async (msg, b = 'E') => {
 
 // Badge Color
 {
-  const once = () => chrome.storage.local.get({
-    'badge-color': '#c2175b'
-  }, prefs => chrome.action.setBadgeBackgroundColor({
-    color: prefs['badge-color']
-  }));
+  const once = () => {
+    if (once.true) {
+      return;
+    }
+    once.true = true;
+
+    chrome.storage.local.get({
+      'badge-color': '#c2175b'
+    }, prefs => chrome.action.setBadgeBackgroundColor({
+      color: prefs['badge-color']
+    }));
+  };
   chrome.runtime.onInstalled.addListener(once);
   chrome.runtime.onStartup.addListener(once);
 }
 
 function error(response) {
+  console.error(response);
+
   notify(`An error occurred:
 
 Exit Code: ${response.code}
@@ -46,7 +59,7 @@ function response(res, success = () => {}) {
   }
   else if (!res) {
     chrome.tabs.query({
-      url: chrome.runtime.getURL('data/helper/index.html')
+      url: chrome.runtime.getURL('/data/helper/index.html')
     }, tabs => {
       if (tabs && tabs.length) {
         chrome.tabs.update(tabs[0].id, {
@@ -59,7 +72,7 @@ function response(res, success = () => {}) {
       }
       else {
         chrome.tabs.create({
-          url: 'data/helper/index.html'
+          url: '/data/helper/index.html'
         });
       }
     });
@@ -102,10 +115,10 @@ function find(callback) {
   });
 }
 
-
 const open = (urls, closeIDs = []) => {
   chrome.storage.local.get({
     path: null,
+    args: '',
     closeme: false
   }, prefs => {
     const close = () => {
@@ -113,47 +126,53 @@ const open = (urls, closeIDs = []) => {
         chrome.tabs.remove(closeIDs);
       }
     };
-    if (navigator.userAgent.indexOf('Mac') !== -1) {
-      if (prefs.path) {
-        const length = app.runtime.mac.args.length;
-        app.runtime.mac.args[length - 1] = prefs.path;
-      }
-      exec('open', [...app.runtime.mac.args, ...urls], r => response(r, close));
-    }
-    else if (navigator.userAgent.indexOf('Linux') !== -1) {
-      exec(prefs.path || app.runtime.linux.name, urls, r => response(r, close));
-    }
-    else {
-      if (prefs.path) {
-        exec(prefs.path, [...(app.runtime.windows.args2 || []), ...urls], r => response(r, close));
-      }
-      else {
-        const args = [...app.runtime.windows.args];
-        // Firefox is not detaching the process on Windows
-        args[1] = args[1].replace('start', navigator.userAgent.includes('Firefox') ? 'start /WAIT' : 'start');
-        args[2] = args[2].replace('%url;', urls.join(' '));
 
-        exec(app.runtime.windows.name, args, res => {
-          // use old method
-          if (res && res.code !== 0) {
-            find(() => open(urls, closeIDs));
-          }
-          else {
-            response(res, close);
-          }
-        }, {windowsVerbatimArguments: true});
+    const os = {
+      linux: navigator.userAgent.indexOf('Linux') !== -1,
+      mac: navigator.userAgent.indexOf('Mac') !== -1
+    };
+    const {command, args, options = {}} = builder.generate(os, prefs.path, prefs.args);
+    args.forEach((arg, n) => {
+      if (arg === '&Expanded-URLs;') {
+        args[n] = options.shell ? urls.map(s => `"${s}"`) : urls;
       }
-    }
+      else if (arg.includes('&Separated-URLs;')) {
+        args[n] = arg.replace('&Separated-URLs;', urls.map(s => `"${s}"`).join(' '));
+      }
+    });
+
+    console.info('[command]', command);
+    console.info('[arguments]', args.flat());
+
+    exec(command, args.flat(), r => {
+      if (prefs.path) {
+        if (os.linux === false && os.mac === false) {
+          if (r && r.code !== 0) {
+            find(() => open(urls, closeIDs));
+            return;
+          }
+        }
+      }
+      response(r, close);
+    }, options);
   });
 };
 
-chrome.action.onClicked.addListener(() => {
-  ct().then(tabs => open(tabs.map(t => t.url), tabs.map(t => t.id)));
+chrome.action.onClicked.addListener(async () => {
+  const tabs = await chrome.tabs.query({
+    currentWindow: true,
+    highlighted: true
+  });
+
+  open(tabs.map(t => t.url), tabs.map(t => t.id));
 });
 
 chrome.runtime.onMessage.addListener((request, sender) => {
   if (request.cmd === 'open-in') {
     open([request.url], [sender.tab.id]);
+    if (request.close) {
+      chrome.tabs.remove(sender.tab.id);
+    }
   }
 });
 
@@ -161,8 +180,7 @@ chrome.runtime.onMessage.addListener((request, sender) => {
 {
   const {management, runtime: {onInstalled, setUninstallURL, getManifest}, storage, tabs} = chrome;
   if (navigator.webdriver !== true) {
-    const page = getManifest().homepage_url;
-    const {name, version} = getManifest();
+    const {homepage_url: page, name, version} = getManifest();
     onInstalled.addListener(({reason, previousVersion}) => {
       management.getSelf(({installType}) => installType === 'normal' && storage.local.get({
         'faqs': true,
@@ -171,7 +189,7 @@ chrome.runtime.onMessage.addListener((request, sender) => {
         if (reason === 'install' || (prefs.faqs && reason === 'update')) {
           const doUpdate = (Date.now() - prefs['last-update']) / 1000 / 60 / 60 / 24 > 45;
           if (doUpdate && previousVersion !== version) {
-            tabs.query({active: true, currentWindow: true}, tbs => tabs.create({
+            tabs.query({active: true, lastFocusedWindow: true}, tbs => tabs.create({
               url: page + '&version=' + version + (previousVersion ? '&p=' + previousVersion : '') + '&type=' + reason,
               active: reason === 'install',
               ...(tbs && tbs.length && {index: tbs[0].index + 1})

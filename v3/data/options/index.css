@@ -26,7 +26,6 @@ textarea {
   padding: 5px;
   box-sizing: border-box;
   border: solid 1px var(--border);
-  margin-top: 2px;
 }
 button,
 input[type=submit],
@@ -89,4 +88,21 @@ a:visited {
   background-color: var(--theme);
   padding: 10px;
   margin: 15px 0;
+}
+.colstyle {
+  display: grid;
+  grid-gap: 5px;
+}
+.colstyle textarea + div {
+  margin-top: 5px;
+}
+#urlFilters {
+  grid-column: 1;
+  grid-row: 2;
+}
+#urlFiltersPermission {
+  justify-self: end;
+  grid-column: 1;
+  grid-row: 2;
+  z-index: 2;
 }

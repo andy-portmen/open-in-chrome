@@ -3,7 +3,9 @@
 <head>
   <title>Options Page :: Open in Chrome</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="index.css">
+  <link rel="icon" type="image/png" href="/data/icons/64.png">
 </head>
 
 <body>
@@ -32,7 +34,14 @@
 
   <p>Comma-separated list of URLs to open with Chrome browser when the link is opened with left-click. Use the <a target="_blank" data-href="faq26">URL Pattern</a>'s compatible format for complex matching patterns.<sup>1</sup></p>
 
-  <textarea id="urls" style="width: 100%" rows="3" placeholder="e.g.: https://www.google.com/, https://bing.com/"></textarea>
+  <h2>Force Open in Chrome</h2>
+  <div class="colstyle">
+    <div><a target="_blank" data-href="faq30">Comma-separated list of page rules</a> to force open with the external browser.</div>
+    <textarea id="urlFilters" style="width: 100%" rows="3" disabled placeholder="Read FAQs page for more details. Example:
+
+*://*word*/, *://*/*word, R:ht{2}ps*://.*\.go{2}gle\.com"></textarea>
+    <input id="urlFiltersPermission" type="button" value="Grant Host Permission">
+  </div>
 
   <div class="grid">
     <label for="reverse"><a data-href="faq24" target="_blank">Reverse Mode<sup>5</sup></a></label>
@@ -40,22 +49,42 @@
     <label for="topRedict">Consider even top-level navigation<sup>6</sup></label>
     <input type="checkbox" id="topRedict">
   </div>
+  <h2><a data-href="faq28" target="_blank">Open with Click Event</a></h2>
+  <textarea id="user-script" style="width: 100%" rows="5" placeholder="Read FAQs page for more info"></textarea>
+
   <h2>Misc</h2>
   <div class="grid">
     <label for="closeme">Close the source tab when link is pushed</label>
     <input type="checkbox" id="closeme">
-    <label for="multiple">Open multiple links at once<sup>3</sup></label>
+    <div>
+      <label for="multiple">Open multiple links at once</label>
+      <sup>3</sup>
+    </div>
     <input type="checkbox" id="multiple">
     <label for="faqs">Open FAQs page on updates</label>
     <input type="checkbox" id="faqs">
   </div>
 
-  <p><label for="path">Path to the executable<sup>2</sup></label></p>
+  <p><label for="path">Path to the executable</label><sup>2</sup></p>
   <input type="text" id="path" style="width: 100%; box-sizing: border-box;">
+
+  <p><label for="args">Arguments</label></p>
+  <input type="text" id="args" style="width: 100%; box-sizing: border-box;">
 
   <div class="admin">Some of the preferences of this extension can be pre-configured by <a data-href="faq17" target="_blank">the domain administrator</a></div>
 
-  <div id="explore" data-cols=5></div>
+  <div class="admin">Default command and arguments:
+    <ul>
+      <li>Window: <code>cmd</code> <code>/s/c start chrome &Separated-URLs;</code></li>
+      <li>macOS: <code>open</code> <code>-a "Google Chrome" &Expanded-URLs;</code></li>
+      <li>Linux: <code>google-chrome</code> <code>&Expanded-URLs;</code></li>
+    </ul>
+
+    <p><code>&Separated-URLs;</code> will be replaced with space-separated URL string as a single argument.</p>
+    <p><code>&Expanded-URLs;</code> will pass URLs as separate arguments.</p>
+    <span>Check the extension's developer console tab for visiting the generated command</span>
+  </div>
+
   <p>
     <button id="reset">Reset Settings</button>
     <button id="support">Support Development</button> - <button id="save">Save Options</button>
@@ -73,7 +102,7 @@
   </ol style="padding-left: 1.8em;">
 
   <script src="../../config.js"></script>
+  <script src="/redirect/convert.js"></script>
   <script src="index.js"></script>
-  <script async src="matched/matched.js"></script>
 </body>
 </html>

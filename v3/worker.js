@@ -131,7 +131,7 @@ const open = (urls, closeIDs = []) => {
       linux: navigator.userAgent.indexOf('Linux') !== -1,
       mac: navigator.userAgent.indexOf('Mac') !== -1
     };
-    const {command, args, options = {}} = builder.generate(os, prefs.path, prefs.args);
+    const {command, args, options = {}} = builder.generate(os, prefs, prefs.args);
     args.forEach((arg, n) => {
       if (arg === '&Expanded-URLs;') {
         args[n] = options.shell ? urls.map(s => `"${s}"`) : urls;
@@ -143,6 +143,7 @@ const open = (urls, closeIDs = []) => {
 
     console.info('[command]', command);
     console.info('[arguments]', args.flat());
+    console.info('[options]', options);
 
     exec(command, args.flat(), r => {
       if (prefs.path) {

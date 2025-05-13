@@ -1,3 +1,4 @@
+/* global cloneInto */
 'use strict';
 
 let port;
@@ -74,7 +75,12 @@ const validate = (a, callback, isTop = false) => {
 };
 chrome.storage.local.get(config, prefs => {
   Object.assign(config, prefs);
-  port.dispatchEvent(new CustomEvent('register', {detail: {script: config['user-script']}}));
+
+  let detail = {script: config['user-script']};
+  if (typeof cloneInto !== 'undefined') {
+    detail = cloneInto(detail, document.defaultView);
+  }
+  port.dispatchEvent(new CustomEvent('register', {detail}));
   // managed
   chrome.storage.managed.get({
     hosts: [],
@@ -101,38 +107,6 @@ chrome.storage.local.get(config, prefs => {
         });
       }, true);
     }
-    // Gmail attachments
-    // https://github.com/andy-portmen/open-in/issues/42
-    if (window.top === window && location.hostname === 'mail.google.com') {
-      validate(location, () => {
-        const script = document.createElement('script');
-        script.textContent = `{
-          const script = document.currentScript;
-          const hps = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
-          Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
-            set(v) {
-              if (v && v.indexOf('&view=att&') !== -1) {
-                script.dispatchEvent(new CustomEvent('open-request', {
-                  detail: v
-                }));
-              }
-              else {
-                hps.set.call(this, v);
-              }
-            }
-          });
-        }`;
-        script.addEventListener('open-request', e => {
-          e.stopPropagation();
-          chrome.runtime.sendMessage({
-            cmd: 'open-in',
-            url: e.detail
-          });
-        });
-        document.documentElement.appendChild(script);
-        script.remove();
-      }, true);
-    }
   });
 });
 
@@ -141,7 +115,11 @@ chrome.storage.onChanged.addListener(e => {
     config[n] = e[n].newValue;
   });
   if (e['user-script']) {
-    port.dispatchEvent(new CustomEvent('register', {detail: {script: config['user-script']}}));
+    let detail = {script: config['user-script']};
+    if (typeof cloneInto !== 'undefined') {
+      detail = cloneInto(detail, document.defaultView);
+    }
+    port.dispatchEvent(new CustomEvent('register', {detail}));
   }
 });
 

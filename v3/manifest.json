@@ -1,7 +1,7 @@
 {
   "name": "Open in Chrome™ Browser",
   "description": "Open current page, link, or all tabs in the Chrome browser.",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "manifest_version": 3,
   "permissions": [
     "storage",
